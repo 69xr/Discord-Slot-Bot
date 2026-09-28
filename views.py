@@ -94,7 +94,7 @@ def build_slot_embed(slot_row: Any) -> discord.Embed:
 class BuyNowButton(discord.ui.Button):
     def __init__(self, slot_id: int):
         super().__init__(
-            label="Buy Now",
+            label="Buy Slot",
             style=discord.ButtonStyle.success,
             emoji="🛒",
             custom_id=f"buy_slot:{slot_id}",
@@ -171,3 +171,50 @@ class SlotView(discord.ui.View):
             ))
 
         self.add_item(BuyNowButton(self.slot_id))
+
+class RenewalDMView(discord.ui.View):
+    def __init__(self, slot_id: int):
+        super().__init__(timeout=None)
+        self.slot_id = slot_id
+
+    @discord.ui.button(
+        label="Request Slot Renewal",
+        style=discord.ButtonStyle.primary,
+        emoji="🔄",
+        custom_id="request_slot_renewal",
+    )
+    async def request_renewal(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer(ephemeral=True)
+        slot = get_slot_by_id(self.slot_id)
+        if not slot:
+            await interaction.followup.send("❌ Slot record not found.", ephemeral=True)
+            return
+
+        guild = interaction.client.get_guild(slot["guild_id"])
+        server_owner = guild.owner if guild else None
+        server_owner_id = server_owner.id if server_owner else (config.SERVER_OWNER_ID or 0)
+
+        # Notify Server Owner of Renewal Request
+        if server_owner:
+            try:
+                dm_embed = discord.Embed(
+                    title="🔄 Slot Renewal Request!",
+                    description=(
+                        f"Slot owner **{interaction.user.mention}** (`{interaction.user}`) requests a renewal!\n\n"
+                        f"**Slot Name:** {slot['slot_name']}\n"
+                        f"**Slot Channel:** <#{slot['channel_id']}>\n"
+                        f"**Current Expiry:** {format_date(slot['expiry_date'])}"
+                    ),
+                    color=0x00FFFF,
+                )
+                await server_owner.send(embed=dm_embed)
+            except Exception:
+                pass
+
+        await interaction.followup.send(
+            content=(
+                f"✅ **Renewal Request Sent!** The server owner (<@{server_owner_id}>) has been notified of your request to renew **{slot['slot_name']}**.\n"
+                f"You can also message the server owner directly: https://discord.com/users/{server_owner_id}"
+            ),
+            ephemeral=True,
+        )

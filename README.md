@@ -23,28 +23,16 @@ A high-performance, lightweight, and modular Discord bot built with `discord.py`
   - Exceeding the daily limit deletes the message and issues a penalty (`1/3`, `2/3`).
   - **3-Penalty Dismissal**: Reaching 3 penalties automatically dismisses the slot, deletes the channel, and records an audit log.
 
+- **🔄 Automated DM Renewal Reminders**:
+  - Automatically sends interactive DM reminders with a **"Request Slot Renewal"** button to owners 3 days prior to expiration.
+  - Clicking the renewal button immediately notifies the Server Owner via DM.
+
 - **⚡ Live Embed Refresh**:
   - Updating daily mention limits via `/manage_slot` live-refreshes embeds across **all active slot channels** in real-time.
 
 - **🛡️ 100% Restart Persistence**:
   - Uses SQLite in **WAL (Write-Ahead Logging)** mode.
-  - Interactive UI buttons (`Buy Now`, `Contact Owner`) and background tasks survive bot restarts seamlessly.
-
----
-
-## 📂 File Structure
-
-```text
-Slots Bot/
-├── .env.example       # Environment configuration template
-├── requirements.txt   # Python dependencies (discord.py, python-dotenv)
-├── README.md          # Full project documentation
-├── config.py          # Environment settings loader & validator
-├── db.py              # SQLite database manager (WAL mode & foreign keys)
-├── views.py           # Embed builder & persistent UI buttons
-├── cogs.py            # Slash commands, auto-category logic & mention monitor
-└── main.py            # Bot launcher & application command error handler
-```
+  - Interactive UI buttons (`Buy Now`, `Contact Owner`, `Request Slot Renewal`) survive bot restarts seamlessly.
 
 ---
 
@@ -80,7 +68,15 @@ Slots Bot/
 
 ---
 
-### 3. `/vouch`
+### 3. `/slot_stats`
+> **Permission:** Slot Owners & Admins  
+> **Description:** View detailed analytics (vouches, remaining days, daily ping usage today, penalties count) for owned slots.  
+> **Options:**
+> - `channel` *(Channel, optional)*: Specific slot channel to inspect.
+
+---
+
+### 4. `/vouch`
 > **Permission:** Everyone  
 > **Description:** Submit a 1 to 5 star rating for a slot channel.  
 > **Options:**
@@ -113,14 +109,3 @@ SLOT_CATEGORY_PREFIX=SLOTS
 ```bash
 python main.py
 ```
-
----
-
-## 💡 Future Ideas & Enhancements
-
-1. **Vouch Reviews/Comments**: Allow users to leave an optional written review alongside their star rating.
-2. **Owner Analytics Command**: `/slot_stats` for owners to see total vouches, remaining days, and daily ping usage.
-3. **Automated Renewal DM Reminders**: Send interactive renewal buttons directly to slot owners 3 days prior to expiration.
-"# Discord-Slot-Bot" 
-"# Discord-Slot-Bot" 
-"# Discord-Slot-Bot" 

@@ -105,6 +105,10 @@ def get_all_slots() -> List[sqlite3.Row]:
     with get_db() as conn:
         return conn.execute("SELECT * FROM slots").fetchall()
 
+def get_user_slots(owner_id: int) -> List[sqlite3.Row]:
+    with get_db() as conn:
+        return conn.execute("SELECT * FROM slots WHERE owner_id = ?", (owner_id,)).fetchall()
+
 def create_slot(
     guild_id: int,
     channel_id: int,

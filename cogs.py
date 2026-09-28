@@ -320,6 +320,60 @@ class SlotCog(commands.Cog):
         await interaction.followup.send(f"✅ Vouch recorded ({stars}★).", ephemeral=True)
         audit("vouch", interaction.user.id, f"slot_id={slot['id']} stars={stars}")
 
+    # --- 4. SLASH COMMAND: /slot_stats ---
+    @app_commands.command(name="slot_stats", description="View analytics (vouches, remaining days, daily ping usage, penalties) for your slots.")
+    @app_commands.describe(channel="Optional: Specific slot channel to check")
+    async def slot_stats_cmd(self, interaction: discord.Interaction, channel: Optional[discord.TextChannel] = None):
+        await interaction.response.defer(ephemeral=True)
+
+        if channel:
+            slot = get_slot_by_channel(channel.id)
+            if not slot:
+                await interaction.followup.send("❌ No slot found for that channel.", ephemeral=True)
+                return
+
+            is_owner = interaction.user.id == slot["owner_id"]
+            is_admin = interaction.user.guild_permissions.manage_channels
+            if not is_owner and not is_admin:
+                await interaction.followup.send("❌ You can only view statistics for your own slots.", ephemeral=True)
+                return
+
+            slots_to_show = [slot]
+        else:
+            from db import get_user_slots
+            slots_to_show = get_user_slots(interaction.user.id)
+            if not slots_to_show:
+                await interaction.followup.send("You do not currently own any active slots.", ephemeral=True)
+                return
+
+        today_str = utcnow().strftime("%Y-%m-%d")
+        embed = discord.Embed(
+            title="📊 Slot Analytics & Performance",
+            description=f"Showing statistics for **{len(slots_to_show)}** slot(s) owned by {interaction.user.mention}",
+            color=0x00FFFF,
+            timestamp=utcnow(),
+        )
+
+        for s in slots_to_show:
+            remaining = days_left(s["expiry_date"])
+            used_pings = get_daily_pings(s["id"], today_str)
+            max_pings = s["max_daily_pings"] or 2
+            penalties = s["penalties"] or 0
+            rating_val = float(s["rating"] or 5.0)
+            vouch_count = int(s["vouch_count"] or 0)
+
+            val_str = (
+                f"• **Channel:** <#{s['channel_id']}>\n"
+                f"• **Remaining Days:** `{remaining} day(s)`\n"
+                f"• **Rating & Vouches:** ⭐ **{rating_val:.1f}/5.0** ({vouch_count} vouches)\n"
+                f"• **Daily Mention Usage Today:** `{used_pings}/{max_pings}` pings used\n"
+                f"• **Penalties:** `{penalties}/3`\n"
+                f"• **Expires:** {format_date(s['expiry_date'])}"
+            )
+            embed.add_field(name=f"🪧 {s['slot_name']}", value=val_str, inline=False)
+
+        await interaction.followup.send(embed=embed, ephemeral=True)
+
     # --- EVENT LISTENER: MENTION & PERMISSION MONITOR ---
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -424,7 +478,16 @@ class SlotCog(commands.Cog):
                 owner = self.bot.get_user(row["owner_id"])
                 if owner:
                     try:
-                        await owner.send(f"⚠️ Your slot **{row['slot_name']}** expires in **{remaining} day(s)**!")
+                        from views import RenewalDMView, format_date
+                        dm_embed = discord.Embed(
+                            title=f"⚠️ Renewal Reminder: Slot '{row['slot_name']}' is expiring soon!",
+                            description=(
+                                f"Your slot **{row['slot_name']}** (<#{row['channel_id']}>) expires in **{remaining} day(s)** on **{format_date(row['expiry_date'])}**.\n\n"
+                                f"Click the button below to request a renewal with the Server Owner!"
+                            ),
+                            color=0xFFA500,
+                        )
+                        await owner.send(embed=dm_embed, view=RenewalDMView(row["id"]))
                     except Exception:
                         pass
 

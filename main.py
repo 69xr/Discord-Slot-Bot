@@ -37,10 +37,12 @@ class SlotBot(commands.Bot):
         log.info("Loaded cogs module.")
 
         # Register persistent UI views for database slots across restarts
+        from views import SlotView, RenewalDMView
         slots = get_all_slots()
         for row in slots:
             self.add_view(SlotView(dict(row)))
-        log.info(f"Registered {len(slots)} persistent slot views.")
+            self.add_view(RenewalDMView(row["id"]))
+        log.info(f"Registered {len(slots)} persistent slot & renewal views.")
 
         # Command Tree Sync
         if config.GUILD_ID:
