@@ -147,7 +147,6 @@ class BuyNowButton(discord.ui.Button):
             content=(
                 f"🛒 **Want to purchase {slot['slot_name']}'s Slot?**\n\n"
                 f"Please DM the Server Owner <@{server_owner_id}> directly to complete your purchase.\n"
-                f"You can also contact the slot owner <@{slot['owner_id']}>."
             ),
             view=dm_view,
             ephemeral=True,

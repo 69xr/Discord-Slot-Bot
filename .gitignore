@@ -1,0 +1,16 @@
+# Environment variables & tokens (CRITICAL: DO NOT PUSH TOKEN TO GITHUB)
+.env
+
+# Database & logs
+*.db
+*.db-wal
+*.db-shm
+*.log
+
+# Python cache & virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
